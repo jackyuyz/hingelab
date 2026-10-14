@@ -115,7 +115,7 @@ Copied from the spec, plus foundation follow-ups:
 1. Hinge sample rate and latency on device — accordion velocity smoothing if updates are sparse.
 2. Does the hinge keep reporting in a two-handed book posture (no throttling)?
 3. Bluetooth MIDI peripheral advertising on iOS 27 — still `CABTMIDILocalPeripheralViewController`?
-4. Price $3.99 vs $4.99.
+4. Price **$4.99** (Jack confirmed; Notion had floated $3.99).
 5. App Store bundle with FoldPlay later?
 6. Real `AVAudioEngine` graph + measured xruns on Duo (placeholder engine is offline-capable only until the Mac host is filled in).
 7. Point size / scale of inner and outer panels (still `DuoDisplaySpec.Assumption` = nil).
@@ -131,10 +131,10 @@ Copied from the spec, plus foundation follow-ups:
 | SettingsKit | 6 | Pass |
 | Instruments | 11 | Pass |
 | Looper | 6 | Pass |
-| Store | 9 | Pass |
+| Store | 10 | Pass |
 | ThemeKit | 1 | Pass |
 | HingeL10n | 4 | Pass |
-| **Total** | **107** | **Pass** |
+| **Total** | **108** | **Pass** |
 
 App unit tests (`Tests/HingeLabTests.swift`) and UI tests need Xcode.
 

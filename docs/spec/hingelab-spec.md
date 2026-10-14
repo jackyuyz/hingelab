@@ -54,7 +54,7 @@
 
 **Selling points:** (1) four instruments built around the hinge; (2) real expressive MIDI controller (CC, pitch bend, notes) to any CoreMIDI app; (3) loop recorder; (4) low latency; (5) offline, private, no account.
 
-**Pricing:** Free: Accordion + loop recorder (1 loop), no MIDI. **HingeLab Full, one-time $3.99**: all instruments (Pitch-Bend Guitar, Filter Sweep, Theremin), MIDI out, 8-track loops, export audio. (Notion suggested $4.99; we use $3.99 for impulse purchase.)
+**Pricing:** Free: Accordion + loop recorder (1 loop), no MIDI. **HingeLab Full, one-time $4.99**: all instruments (Pitch-Bend Guitar, Filter Sweep, Theremin), MIDI out, 8-track loops, export audio. (Jack confirmed $4.99; an earlier impulse-price idea was $3.99.)
 
 **Success metrics:** 5,000 downloads in 60 days; ≥5% conversion; ≥4.5★; press mentions; MIDI users ≥ 15% of paid (local counter only).
 
@@ -239,7 +239,7 @@ Base `PrivacyInfo.xcprivacy` (add a required-reason entry only for APIs the app 
 Widget / app extensions get their own copy of the manifest.
 HingeLab entries: UserDefaults CA92.1, FileTimestamp C617.1 (loops list).
 
-**StoreKit:** `com.jackyu.hingelab.full` non-consumable $3.99.
+**StoreKit:** `com.jackyu.hingelab.full` non-consumable $4.99.
 StoreKit 2 implementation (shared pattern, `Store` module):
 - `@MainActor @Observable final class Store`: loads products with `Product.products(for:)`, starts a `Transaction.updates` listener at launch, and recomputes entitlements from `Transaction.currentEntitlements`. Every `VerificationResult` is checked; `.unverified` grants nothing.
 - Purchase: `product.purchase()`. Handle `.success(.verified)` (then `transaction.finish()`), `.pending` (Ask to Buy / SCA: show a "Waiting for approval" state), and `.userCancelled` (silently return).
@@ -337,7 +337,7 @@ How to simulate fold states and hinge angles:
 1. Hinge sample rate and latency on device: if updates are slow (< 30 Hz), the accordion velocity model needs heavier smoothing.
 2. Does the hinge report while the user holds the device in a book posture with both hands moving it rhythmically (no throttling)?
 3. Bluetooth MIDI peripheral advertising on iOS 27 (CoreAudioKit view controller still supported?). Verify.
-4. Price $3.99 vs $4.99 (Notion). Assumed $3.99 for impulse; test.
+4. Price **$4.99** (Jack confirmed 2026-10-14). Earlier $3.99 impulse idea is retired.
 5. Should HingeLab and FoldPlay be bundled (App Store app bundle)? Possible after both ship.
 
 

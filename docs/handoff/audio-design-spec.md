@@ -49,6 +49,8 @@ To add samples:
 
 Example: `hl_builtin_accordion_C3_reed.caf`
 
+HingeLab Full (`com.jackyu.hingelab.full`) is a one-time **$4.99** unlock for guitar, filter, theremin, MIDI, and 8-track export. Instrument packs below are additional non-consumables. UI must use StoreKit `displayPrice`, not a hardcoded string.
+
 Pack IDs match Store products:
 
 | Pack | Product ID | Slots |

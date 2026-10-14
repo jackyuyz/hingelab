@@ -71,7 +71,7 @@ open HingeLab.xcodeproj
 - **Never** map absolute hinge degrees to pitch/cutoff; use `HingeCalibration` + `HingeSample.value01`.
 - Ribbon/tilt must keep **identical** `value01` results as the hinge (`HingeInputPipelineTests`).
 - Keep `swift test` green on Linux. Don’t import AVFoundation/StoreKit/SwiftUI into packages.
-- StoreKit: never hardcode `$3.99` in UI strings; use `displayPrice`. `.unverified` grants nothing.
+- StoreKit: Full is a one-time **$4.99** (`com.jackyu.hingelab.full`). Never hardcode the price in UI strings; use `displayPrice`. `.unverified` grants nothing.
 - Privacy: Data Not Collected. No tracking. Local network / Bluetooth strings only on the MIDI screen.
 - Accordion stays free; other instruments stay gated on `Entitlements.hasFull`.
 - Audio-thread render: no allocations. Close-while-playing must not click (jump < 0.1).

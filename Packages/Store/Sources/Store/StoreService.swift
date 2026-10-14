@@ -87,7 +87,7 @@ public final class MockStore: StoreServicing, @unchecked Sendable {
     public init(entitlements: Entitlements = Entitlements()) {
         self.entitlements = entitlements
         self.products = [
-            StoreProduct(id: .full, displayName: "HingeLab Full", displayPrice: "$3.99"),
+            StoreProduct(id: .full, displayName: "HingeLab Full", displayPrice: "$4.99"),
             StoreProduct(id: .reedPack, displayName: "Reed Pack", displayPrice: "$0.99"),
             StoreProduct(id: .guitarPack, displayName: "Guitar Pack", displayPrice: "$0.99"),
             StoreProduct(id: .filterPack, displayName: "Filter Pack", displayPrice: "$0.99"),

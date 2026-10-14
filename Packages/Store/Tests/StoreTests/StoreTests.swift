@@ -22,6 +22,14 @@ struct EntitlementTests {
         #expect(full.midiEnabled)
         #expect(full.audioExportEnabled)
     }
+
+    @Test("Full product lists the confirmed $4.99 price")
+    func fullPrice() {
+        let store = MockStore()
+        let full = store.products.first { $0.id == .full }
+        #expect(full?.displayPrice == "$4.99")
+        #expect(ProductIdentifier.full.rawValue == "com.jackyu.hingelab.full")
+    }
 }
 
 @Suite("Mock StoreKit flow")

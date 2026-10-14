@@ -101,7 +101,7 @@ States: empty, recording, overdub, saving, export failed. Track rows later (`Loo
 States: no destinations, connected, Bluetooth advertising. Do not request local-network/Bluetooth until this screen.
 
 ### S6 Paywall (`PaywallView`)
-States: loading, offline, pending, purchased. **Never hardcode the price** — use `StoreProduct.displayPrice`. Hero slot `slot.paywallHero`.
+States: loading, offline, pending, purchased. Full is a one-time **$4.99** (`com.jackyu.hingelab.full`). **Never hardcode the price in UI strings** — use `StoreProduct.displayPrice` / StoreKit `ProductView`. Hero slot `slot.paywallHero`.
 
 ### S7 Settings (`SettingsView`)
 Buffer 128/256, bend ±2/±12, scale, A4, haptics, left-handed, language (en / zh-Hans), restore, calibrate.
