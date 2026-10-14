@@ -1,0 +1,95 @@
+{
+  "identifier" : "hingelab-configuration",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "3.99",
+      "familyShareable" : true,
+      "internalID" : "full001",
+      "localizations" : [
+        {
+          "description" : "All instruments, MIDI out, 8-track loops, and audio export.",
+          "displayName" : "HingeLab Full",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "全部乐器、MIDI 输出、8 轨循环和音频导出。",
+          "displayName" : "HingeLab Full",
+          "locale" : "zh_CN"
+        }
+      ],
+      "productID" : "com.jackyu.hingelab.full",
+      "referenceName" : "HingeLab Full",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : true,
+      "internalID" : "packreed",
+      "localizations" : [
+        {
+          "description" : "Additional accordion reed samples.",
+          "displayName" : "Reed Pack",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackyu.hingelab.pack.reeds",
+      "referenceName" : "Reed Pack",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : true,
+      "internalID" : "packguitar",
+      "localizations" : [
+        {
+          "description" : "Additional guitar string samples.",
+          "displayName" : "Guitar Pack",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackyu.hingelab.pack.guitar",
+      "referenceName" : "Guitar Pack",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : true,
+      "internalID" : "packfilter",
+      "localizations" : [
+        {
+          "description" : "Additional filter-sweep patches.",
+          "displayName" : "Filter Pack",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackyu.hingelab.pack.filter",
+      "referenceName" : "Filter Pack",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : true,
+      "internalID" : "packtheremin",
+      "localizations" : [
+        {
+          "description" : "Additional theremin patches.",
+          "displayName" : "Theremin Pack",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.jackyu.hingelab.pack.theremin",
+      "referenceName" : "Theremin Pack",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

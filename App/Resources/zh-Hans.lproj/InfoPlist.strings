@@ -1,0 +1,3 @@
+NSLocalNetworkUsageDescription = "HingeLab 可以通过局域网把 MIDI 发送到你 Mac 上的音乐 App。";
+NSBluetoothAlwaysUsageDescription = "HingeLab 可以作为蓝牙 MIDI 乐器连接你的其他设备。";
+CFBundleDisplayName = "HingeLab";
