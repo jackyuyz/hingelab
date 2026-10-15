@@ -76,7 +76,15 @@ open HingeLab.xcodeproj
 - Accordion stays free; other instruments stay gated on `Entitlements.hasFull`.
 - Audio-thread render: no allocations. Close-while-playing must not click (jump < 0.1).
 
-## Suggested first visual/audio PR
+## Status (visual + audio pass done)
+
+1. App icon + `DesignedTheme` — done (`scripts/render-icon.mjs`, `ThemeKit/DesignedTheme.swift`).
+2. Placeholder interiors replaced with drawn components, a11y ids unchanged — done (`App/Design/`).
+3. Accordion reed CAFs + looping `SampleVoice` (`LoopingSampler`) behind `AudioAssetProviding` — done.
+4. Guitar KS excitation (pick position, polyphony, live bend), filter drone (SVF), theremin patch — done.
+5. AVAudioEngine host — done; needs a device run. Still open: CoreMIDI client, StoreKit `Transaction.updates`, looper output tap.
+
+## Original first visual/audio PR plan
 
 1. App icon + `DesignedTheme` colors/symbols.
 2. Replace `PlaceholderSlot` interiors (bellows, fretboard, antenna, gauge) without renaming a11y ids.

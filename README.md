@@ -2,7 +2,7 @@
 
 A native iOS musical instrument for Apple’s iPhone Duo. Fold it like an accordion, bend notes like a guitar, sweep a filter, or play a theremin — and send MIDI to GarageBand or Logic.
 
-Foundation only: engine, mappings, StoreKit/MIDI scaffolds, Duo-aware placeholder UI, and handoff specs for Claude (visuals + sound). **No final artwork or sample library in this tree.**
+Engine, mappings, StoreKit/MIDI scaffolds, the designed Duo UI (lab-instrument look, drawn and animated from the hinge), designed synth patches, built-in accordion reed samples, the app icon, and a real AVAudioEngine host.
 
 ## Project layout
 
@@ -10,11 +10,13 @@ Foundation only: engine, mappings, StoreKit/MIDI scaffolds, Duo-aware placeholde
 hingelab/
 ├── project.yml                 # XcodeGen (regenerate the .xcodeproj on a Mac)
 ├── App/                        # SwiftUI host (thin)
-│   ├── Picker/                 # Instrument picker + cover compact player
-│   ├── InstrumentViews/        # Accordion, Guitar, Filter, Theremin placeholders
+│   ├── Picker/                 # Instrument picker (lab bench) + cover pocket player
+│   ├── InstrumentViews/        # Accordion, Guitar, Filter, Theremin surfaces
+│   ├── Design/                 # Stage components + vector instrument art
 │   ├── Looper/ MIDI/ Calibration/ Paywall/ Settings/
 │   ├── Shared/                 # HingeBridge, Duo layout, theme adapter
-│   └── Audio/                  # AVAudioEngine / StoreKit / CoreMIDI hosts
+│   ├── Resources/Samples/      # Built-in accordion reed CAFs (looped, 48 kHz/24-bit)
+│   └── Audio/                  # AVAudioEngine / StoreKit / CoreMIDI hosts, sample loader
 ├── Packages/                   # Platform-independent; `swift test` on Linux
 │   ├── FoldKit/                # Fold state, mocks, -FoldMock, display spec (reference)
 │   ├── HingeInput/             # Relative angle, velocity, calibration, ribbon
@@ -93,9 +95,16 @@ All fold traffic goes through **FoldKit**. Nothing else calls `onHingeChange` / 
 
 **HingeInput** turns `FoldState` into `HingeSample` (calibrated 0…1, velocity, EMA, dead zone). Ribbon and tilt use the same 0…1.
 
-**Synth** renders offline on Linux. The iOS host (`AVAudioEngineHost`) is a scaffold around the same `AudioEngineControlling` protocol.
+**Synth** renders offline on Linux. On iOS, `AVAudioEngineHost` pulls the same `SynthBank` from an `AVAudioSourceNode` (allocation-free render path, unfair lock held for microseconds) and maps interruptions / route changes to `AudioSessionEvent`.
 
-**ThemeKit** / **AudioAssetProviding** are how designed visuals and samples drop in without engine changes.
+**ThemeKit** / **AudioAssetProviding** are how designed visuals and samples drop in without engine changes. `DesignedTheme` and `BuiltinAudioAssets` are injected in `HingeLabApp`.
+
+## Design and sound
+
+- **Look:** dark lab stage, ivory precision dials, one lacquer hue per instrument (accordion red, guitar amber, filter cyan, theremin violet). Tokens live in `DesignedTheme` (contrast-checked in tests). Instrument art is vector (`App/Design/`), driven by `HingeSample` through `InstrumentMotion` (tested on Linux); Reduce Motion freezes meters and sparks.
+- **Icon:** `scripts/assets/AppIcon.svg` → `node scripts/render-icon.mjs` writes `AppIcon-1024.png` (no alpha) and the spark sprite.
+- **Patches:** band-limited reed with a constant 1.25 Hz musette beat, six-string bendable Karplus-Strong, resonant SVF filter drone, shaped theremin with vibrato (`Packages/Synth/Sources/Synth/DesignedVoices.swift`).
+- **Samples:** `python3 scripts/render-reed-samples.py` renders the four built-in reed roots (C3, G3, C4, G4) with seamless sustain loops in the CAF `mark` chunk and the root note in `inst`. `CAFCodec` (pure Swift) reads them on every platform.
 
 ## Unverified APIs
 
@@ -117,24 +126,24 @@ Copied from the spec, plus foundation follow-ups:
 3. Bluetooth MIDI peripheral advertising on iOS 27 — still `CABTMIDILocalPeripheralViewController`?
 4. Price **$4.99** (Jack confirmed; Notion had floated $3.99).
 5. App Store bundle with FoldPlay later?
-6. Real `AVAudioEngine` graph + measured xruns on Duo (placeholder engine is offline-capable only until the Mac host is filled in).
+6. Measured xruns and hinge→audible latency on a Duo (the AVAudioEngine graph exists; not yet run on hardware). Looper capture still needs an output tap.
 7. Point size / scale of inner and outer panels (still `DuoDisplaySpec.Assumption` = nil).
 
-## Test results (Linux, Swift 6.4.1)
+## Test results (Linux, Swift 6.2.4)
 
 | Package | Tests | Status |
 |---------|-------|--------|
 | FoldKit | 47 | Pass |
 | HingeInput | 9 | Pass |
-| Synth | 9 | Pass |
+| Synth | 21 | Pass |
 | MIDIOut | 5 | Pass |
 | SettingsKit | 6 | Pass |
-| Instruments | 11 | Pass |
+| Instruments | 12 | Pass |
 | Looper | 6 | Pass |
 | Store | 10 | Pass |
-| ThemeKit | 1 | Pass |
-| HingeL10n | 4 | Pass |
-| **Total** | **108** | **Pass** |
+| ThemeKit | 9 | Pass |
+| HingeL10n | 8 | Pass |
+| **Total** | **133** | **Pass** |
 
 App unit tests (`Tests/HingeLabTests.swift`) and UI tests need Xcode.
 

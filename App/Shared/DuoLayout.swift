@@ -40,6 +40,7 @@ struct DuoSplitStack<Left: View, Right: View>: View {
     var horizontal: Bool
     var crease: CreaseRegion?
     var leftHanded: Bool
+    var accent: Color = .secondary
     @ViewBuilder var left: () -> Left
     @ViewBuilder var right: () -> Right
 
@@ -55,13 +56,13 @@ struct DuoSplitStack<Left: View, Right: View>: View {
             if horizontal {
                 HStack(spacing: 0) {
                     first.frame(maxWidth: .infinity, maxHeight: .infinity)
-                    CreaseGuideSlot(region: crease)
+                    CreaseGuideSlot(region: crease, accent: accent)
                     second.frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             } else {
                 VStack(spacing: 0) {
                     first.frame(maxWidth: .infinity, maxHeight: .infinity)
-                    CreaseGuideSlot(region: crease, vertical: true)
+                    CreaseGuideSlot(region: crease, vertical: true, accent: accent)
                     second.frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
@@ -69,20 +70,49 @@ struct DuoSplitStack<Left: View, Right: View>: View {
     }
 }
 
-/// Named slot for the crease. Width comes from `CreaseRegionProviding`, never hardcoded Duo pixels.
+/// Named slot for the crease. Width comes from `CreaseRegionProviding`, never
+/// hardcoded Duo pixels. The guide is drawn as a hinge line with knuckles so
+/// the fold reads as part of the instrument; it overhangs a zero-width region
+/// without taking layout space.
 struct CreaseGuideSlot: View {
     var region: CreaseRegion?
     var vertical = false
+    var accent: Color = .secondary
+    @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        Rectangle()
-            .fill(.secondary.opacity(0.35))
-            .frame(
-                width: vertical ? nil : CGFloat(region?.width ?? 0),
-                height: vertical ? CGFloat(region?.width ?? 0) : nil
-            )
+        let width = CGFloat(region?.width ?? 0)
+        Color.clear
+            .frame(width: vertical ? nil : width, height: vertical ? width : nil)
+            .overlay {
+                Canvas { ctx, size in
+                    let length = vertical ? size.width : size.height
+                    let line = model.theme.ui(.creaseGuide)
+                    let mid = vertical ? size.height / 2 : size.width / 2
+                    var path = Path()
+                    if vertical {
+                        path.move(to: CGPoint(x: 0, y: mid))
+                        path.addLine(to: CGPoint(x: length, y: mid))
+                    } else {
+                        path.move(to: CGPoint(x: mid, y: 0))
+                        path.addLine(to: CGPoint(x: mid, y: length))
+                    }
+                    ctx.stroke(path, with: .color(line), lineWidth: 2)
+                    // Hinge knuckles every 18 % of the length.
+                    for i in 0..<5 {
+                        let t = (0.14 + 0.18 * CGFloat(i)) * length
+                        let knuckle = vertical
+                            ? CGRect(x: t - 9, y: mid - 3, width: 18, height: 6)
+                            : CGRect(x: mid - 3, y: t - 9, width: 6, height: 18)
+                        ctx.fill(Path(roundedRect: knuckle, cornerRadius: 3), with: .color(i == 2 ? accent : line))
+                    }
+                }
+                .frame(width: vertical ? nil : max(width, 8), height: vertical ? max(width, 8) : nil)
+                .allowsHitTesting(false)
+            }
+            .accessibilityElement()
             .accessibilityIdentifier("slot.crease")
-            .accessibilityLabel("Crease (placeholder)")
+            .accessibilityLabel(L10nKey.slotCrease.text(in: model.language))
     }
 }
 

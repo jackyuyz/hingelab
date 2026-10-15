@@ -5,6 +5,10 @@ import Foundation
 public enum ColorToken: String, CaseIterable, Sendable {
     case stageBackground
     case surface
+    case surfaceRaised
+    case hairline
+    /// Ink on top of an instrument hue (key labels on a lit key).
+    case onHue
     case primaryText
     case secondaryText
     case creaseGuide
@@ -90,6 +94,9 @@ public struct PlaceholderTheme: ThemeProviding, Sendable {
         switch token {
         case .stageBackground: return ThemeColor(red: 0.07, green: 0.07, blue: 0.09)
         case .surface: return ThemeColor(red: 0.14, green: 0.14, blue: 0.16)
+        case .surfaceRaised: return ThemeColor(red: 0.20, green: 0.20, blue: 0.22)
+        case .hairline: return ThemeColor(red: 0.30, green: 0.30, blue: 0.33)
+        case .onHue: return ThemeColor(red: 0.07, green: 0.07, blue: 0.09)
         case .primaryText: return ThemeColor(red: 0.96, green: 0.96, blue: 0.97)
         case .secondaryText: return ThemeColor(red: 0.70, green: 0.70, blue: 0.73)
         case .creaseGuide: return ThemeColor(red: 0.40, green: 0.40, blue: 0.45)
@@ -132,9 +139,33 @@ public struct PlaceholderTheme: ThemeProviding, Sendable {
 public enum SampleSlot: String, CaseIterable, Sendable {
     case accordionReedC3
     case accordionReedG3
+    case accordionReedC4
+    case accordionReedG4
     case guitarPluckE2
     case filterNoise
     case thereminSine
+}
+
+extension SampleSlot {
+    /// MIDI root of the recording, used when a file has no `inst` chunk.
+    public var rootMIDINote: Double {
+        switch self {
+        case .accordionReedC3: return 48
+        case .accordionReedG3: return 55
+        case .accordionReedC4: return 60
+        case .accordionReedG4: return 67
+        case .guitarPluckE2: return 40
+        case .filterNoise: return 48
+        case .thereminSine: return 69
+        }
+    }
+
+    public var isAccordionReed: Bool {
+        switch self {
+        case .accordionReedC3, .accordionReedG3, .accordionReedC4, .accordionReedG4: return true
+        default: return false
+        }
+    }
 }
 
 public protocol AudioAssetProviding: Sendable {

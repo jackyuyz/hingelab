@@ -5,6 +5,7 @@ import Instruments
 import SettingsKit
 import Store
 import Synth
+import ThemeKit
 @testable import HingeLab
 
 final class HingeLabTests: XCTestCase {
@@ -48,5 +49,45 @@ final class HingeLabTests: XCTestCase {
         XCTAssertEqual(MockFoldStateProvider.parseArgument("open").posture, .fullyOpen)
         XCTAssertEqual(MockFoldStateProvider.parseArgument("half:90").angle, 90)
         XCTAssertNotNil(MockFoldStateProvider.parseArgument("sweep:10-180:2").script)
+    }
+
+    @MainActor
+    func testPreviewUsesDesignedThemeAndBuiltinReeds() {
+        let model = AppModel.preview
+        XCTAssertEqual(model.theme.name, "hingelab")
+        XCTAssertEqual(model.audioAssets.sampleName(.accordionReedC3), "hl_builtin_accordion_C3_reed")
+    }
+
+    @MainActor
+    func testAccordionKeyAloneIsSilentUntilBellowsMove() {
+        let model = AppModel.preview
+        model.select(.accordion)
+        model.noteOn(60)
+        XCTAssertTrue(model.heldNotes.contains(60))
+        XCTAssertEqual(model.currentParams.amplitude, 0, "a key without bellows must not sound")
+        model.noteOff(60)
+        XCTAssertTrue(model.heldNotes.isEmpty)
+    }
+
+    @MainActor
+    func testClosingClearsHeldNotes() {
+        let model = AppModel.preview
+        model.select(.accordion)
+        model.noteOn(62)
+        model.ingestFold(FoldState(posture: .closed, angleDegrees: 0))
+        XCTAssertTrue(model.heldNotes.isEmpty)
+    }
+
+    func testBundledReedSamplesDecode() throws {
+        let assets = BuiltinAudioAssets()
+        for slot in SampleSlot.allCases where slot.isAccordionReed {
+            let name = assets.sampleName(slot)
+            let url = Bundle.main.url(forResource: name, withExtension: "caf")
+                ?? Bundle.main.url(forResource: name, withExtension: "caf", subdirectory: "Samples")
+            let data = try Data(contentsOf: try XCTUnwrap(url, "\(name).caf missing from app bundle"))
+            let decoded = try CAFCodec.decode(data)
+            XCTAssertEqual(decoded.sampleRate, 48_000)
+            XCTAssertNotNil(decoded.loopStart)
+        }
     }
 }

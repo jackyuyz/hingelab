@@ -27,4 +27,22 @@ final class HingeLabUITests: XCTestCase {
         app.buttons["picker.settings"].tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
     }
+
+    func testAccordionHalfFoldShowsDesignedSlots() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-UITestMode", "1", "-FoldMock", "half:95"]
+        app.launch()
+        app.buttons["picker.accordion"].tap()
+        XCTAssertTrue(app.otherElements["slot.bellows"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.otherElements["slot.angleGauge"].exists)
+        XCTAssertTrue(app.buttons["accordion.chord.C"].exists)
+        XCTAssertEqual(app.buttons["accordion.chord.C"].label, "C major chord")
+    }
+
+    func testClosedShowsPocketPlayer() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-UITestMode", "1", "-FoldMock", "closed"]
+        app.launch()
+        XCTAssertTrue(app.otherElements["cover.compact"].waitForExistence(timeout: 5))
+    }
 }

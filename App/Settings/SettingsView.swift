@@ -53,17 +53,19 @@ struct SettingsView: View {
             }
             Section(L10nKey.settingsAbout.text(in: model.language)) {
                 HStack {
-                    Text("Version")
+                    Text(L10nKey.settingsVersion.text(in: model.language))
                     Spacer()
-                    Text("1.0.0").foregroundStyle(.secondary)
+                    Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0")
+                        .foregroundStyle(.secondary)
                 }
                 HStack {
-                    Text("Bundle")
+                    Text(L10nKey.settingsBundle.text(in: model.language))
                     Spacer()
                     Text("com.jackyu.hingelab").foregroundStyle(.secondary).font(.caption)
                 }
             }
         }
+        .tint(model.theme.ui(model.selectedInstrument.hueToken))
         .navigationTitle(L10nKey.settingsTitle.text(in: model.language))
     }
 

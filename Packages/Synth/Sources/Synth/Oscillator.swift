@@ -52,14 +52,11 @@ public struct Oscillator: Sendable, Equatable {
     }
 }
 
-/// 2–3 detuned oscillators for the accordion musette.
-public struct ReedVoice: Sendable {
-    private var oscA = Oscillator(waveform: .saw)
-    private var oscB = Oscillator(waveform: .saw, phase: 0.17)
-    private var oscC = Oscillator(waveform: .triangle, phase: 0.41)
+/// Simple sine used so the engine is audible end-to-end before real patches land.
+public struct PlaceholderSineVoice: SynthRendering {
+    private var osc = Oscillator(waveform: .sine)
     public var ampSmoother: AudioParameterSmoother
     public var freqSmoother: AudioParameterSmoother
-    public var active = false
 
     public init(sampleRate: Double = AudioConstants.defaultSampleRate) {
         ampSmoother = AudioParameterSmoother(sampleRate: sampleRate, value: 0)
@@ -69,161 +66,17 @@ public struct ReedVoice: Sendable {
     public mutating func apply(_ params: VoiceParams) {
         ampSmoother.setTarget(params.amplitude)
         freqSmoother.setTarget(params.bentFrequencyHz)
-        active = params.amplitude > 0.0001
     }
 
-    public mutating func render(into buffer: inout [Float], sampleRate: Double) {
-        for i in 0..<buffer.count {
-            let amp = ampSmoother.next()
-            let freq = freqSmoother.next()
-            let a = oscA.next(frequencyHz: freq, sampleRate: sampleRate)
-            let b = oscB.next(frequencyHz: freq * 1.002, sampleRate: sampleRate)
-            let c = oscC.next(frequencyHz: freq * 0.997, sampleRate: sampleRate)
-            let mix = (a + b + c) / 3
-            buffer[i] = Float(mix * amp * 0.4)
-        }
-    }
-}
-
-/// Karplus-Strong plucked string.
-public struct KarplusStrongVoice: Sendable {
-    private var delay: [Double] = []
-    private var writeIndex = 0
-    private var previous = 0.0
-    public var damping: Double = 0.996
-    public var ampSmoother: AudioParameterSmoother
-    public var rng: SeededRNG
-    public var active = false
-
-    public init(sampleRate: Double = AudioConstants.defaultSampleRate, seed: UInt64 = 1) {
-        ampSmoother = AudioParameterSmoother(sampleRate: sampleRate, value: 0)
-        rng = SeededRNG(seed: seed)
-    }
-
-    public mutating func pluck(frequencyHz: Double, velocity: Double, sampleRate: Double) {
-        let freq = max(frequencyHz, 20)
-        let length = max(2, Int((sampleRate / freq).rounded()))
-        delay = (0..<length).map { _ in rng.nextSigned() * velocity }
-        writeIndex = 0
-        previous = 0
-        active = true
-        ampSmoother.snap(velocity)
-        ampSmoother.setTarget(velocity)
+    public mutating func noteOn(frequencyHz: Double, velocity: Double) {
+        apply(VoiceParams(amplitude: velocity, frequencyHz: frequencyHz))
     }
 
     public mutating func noteOff() {
         ampSmoother.setTarget(0)
     }
 
-    public mutating func apply(_ params: VoiceParams) {
-        ampSmoother.setTarget(params.amplitude)
-        if params.amplitude > 0.0001, delay.isEmpty {
-            pluck(frequencyHz: params.bentFrequencyHz, velocity: params.amplitude, sampleRate: ampSmoother.sampleRate)
-        }
-        if params.amplitude <= 0.0001 {
-            noteOff()
-        }
-    }
-
-    public mutating func render(into buffer: inout [Float], sampleRate: Double) {
-        _ = sampleRate
-        if delay.isEmpty {
-            for i in 0..<buffer.count { buffer[i] = 0 }
-            return
-        }
-        for i in 0..<buffer.count {
-            let amp = ampSmoother.next()
-            let idx = writeIndex % delay.count
-            let current = delay[idx]
-            let filtered = 0.5 * (current + previous) * damping
-            delay[idx] = filtered
-            previous = current
-            writeIndex = (writeIndex + 1) % delay.count
-            buffer[i] = Float(current * amp * 0.6)
-        }
-    }
-}
-
-/// One-pole low-pass used by Filter Sweep. Resonance is a mild feedback.
-public struct SubtractiveVoice: Sendable {
-    private var osc = Oscillator(waveform: .saw)
-    private var lp = 0.0
-    public var ampSmoother: AudioParameterSmoother
-    public var cutoffSmoother: AudioParameterSmoother
-    public var resoSmoother: AudioParameterSmoother
-    public var freqSmoother: AudioParameterSmoother
-
-    public init(sampleRate: Double = AudioConstants.defaultSampleRate) {
-        ampSmoother = AudioParameterSmoother(sampleRate: sampleRate, value: 0)
-        cutoffSmoother = AudioParameterSmoother(sampleRate: sampleRate, value: 1_000)
-        resoSmoother = AudioParameterSmoother(sampleRate: sampleRate, value: 0.2)
-        freqSmoother = AudioParameterSmoother(sampleRate: sampleRate, value: 110)
-    }
-
-    public mutating func apply(_ params: VoiceParams) {
-        ampSmoother.setTarget(params.amplitude)
-        cutoffSmoother.setTarget(params.cutoffHz)
-        resoSmoother.setTarget(params.resonance)
-        freqSmoother.setTarget(params.bentFrequencyHz)
-    }
-
-    public mutating func render(into buffer: inout [Float], sampleRate: Double) {
-        let sr = max(sampleRate, 1)
-        for i in 0..<buffer.count {
-            let amp = ampSmoother.next()
-            let cutoff = max(20, cutoffSmoother.next())
-            let reso = min(0.95, max(0, resoSmoother.next()))
-            let freq = freqSmoother.next()
-            let raw = osc.next(frequencyHz: freq, sampleRate: sr)
-            let coeff = 1 - exp(-2 * Double.pi * cutoff / sr)
-            lp += coeff * (raw - lp + reso * lp)
-            lp = min(1.5, max(-1.5, lp))
-            buffer[i] = Float(lp * amp * 0.35)
-        }
-    }
-}
-
-public struct ThereminVoice: Sendable {
-    private var osc = Oscillator(waveform: .sine)
-    public var ampSmoother: AudioParameterSmoother
-    public var freqSmoother: AudioParameterSmoother
-
-    public init(sampleRate: Double = AudioConstants.defaultSampleRate) {
-        ampSmoother = AudioParameterSmoother(sampleRate: sampleRate, timeSeconds: 0.03, value: 0)
-        freqSmoother = AudioParameterSmoother(sampleRate: sampleRate, timeSeconds: 0.025, value: 440)
-    }
-
-    public mutating func apply(_ params: VoiceParams) {
-        ampSmoother.setTarget(params.amplitude)
-        freqSmoother.setTarget(params.bentFrequencyHz)
-    }
-
-    public mutating func render(into buffer: inout [Float], sampleRate: Double) {
-        for i in 0..<buffer.count {
-            let amp = ampSmoother.next()
-            let freq = freqSmoother.next()
-            buffer[i] = Float(osc.next(frequencyHz: freq, sampleRate: sampleRate) * amp * 0.5)
-        }
-    }
-}
-
-/// Simple sine used so the engine is audible end-to-end before real patches land.
-public struct PlaceholderSineVoice: Sendable {
-    private var osc = Oscillator(waveform: .sine)
-    public var ampSmoother: AudioParameterSmoother
-    public var freqSmoother: AudioParameterSmoother
-
-    public init(sampleRate: Double = AudioConstants.defaultSampleRate) {
-        ampSmoother = AudioParameterSmoother(sampleRate: sampleRate, value: 0)
-        freqSmoother = AudioParameterSmoother(sampleRate: sampleRate, value: 440)
-    }
-
-    public mutating func apply(_ params: VoiceParams) {
-        ampSmoother.setTarget(params.amplitude)
-        freqSmoother.setTarget(params.bentFrequencyHz)
-    }
-
-    public mutating func render(into buffer: inout [Float], sampleRate: Double) {
+    public mutating func render(into buffer: UnsafeMutableBufferPointer<Float>, sampleRate: Double) {
         for i in 0..<buffer.count {
             let amp = ampSmoother.next()
             let freq = freqSmoother.next()

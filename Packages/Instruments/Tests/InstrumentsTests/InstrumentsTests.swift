@@ -121,6 +121,17 @@ struct InstrumentBehaviorTests {
         #expect(filter.params.cutoffHz < FilterMapping.cutoffHz(value01: 0.9))
     }
 
+    @Test("Filter step pads retune the drone and keep the hinge cutoff")
+    func filterSteps() {
+        let filter = FilterSweepInstrument()
+        filter.noteOn(55, velocity: 100)
+        #expect(filter.params.amplitude >= 0.4)
+        #expect(abs((filter.params.frequencyHz ?? 0) - 195.998) < 0.01)
+        filter.handle(sample(value01: 0.5))
+        #expect(abs((filter.params.frequencyHz ?? 0) - 195.998) < 0.01, "hinge moves cutoff, not pitch")
+        #expect(filter.params.cutoffHz > 20)
+    }
+
     @Test("Free vs paid ids")
     func gating() {
         #expect(InstrumentID.accordion.isFree)

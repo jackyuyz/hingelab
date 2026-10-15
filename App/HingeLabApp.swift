@@ -2,6 +2,7 @@ import SwiftUI
 import FoldKit
 import HingeInput
 import HingeL10n
+import MIDIOut
 import SettingsKit
 import Store
 import Synth
@@ -18,19 +19,27 @@ struct HingeLabApp: App {
         _mockFoldStateProvider = State(initialValue: mock)
         let settingsStore = UserDefaultsSettingsStore()
         let store = MockStore(entitlements: EntitlementCache.load() ?? Entitlements())
-        _model = StateObject(wrappedValue: AppModel(
+        let host = AVAudioEngineHost(bufferFrames: settingsStore.load().audioBuffer.frames)
+        let model = AppModel(
             settingsStore: settingsStore,
             store: store,
-            engine: OfflineAudioEngine(),
+            engine: host,
             midi: NullMIDISender(),
-            theme: PlaceholderTheme(),
-            audioAssets: PlaceholderAudioAssets()
-        ))
+            theme: DesignedTheme(),
+            audioAssets: BuiltinAudioAssets()
+        )
+        #if canImport(AVFoundation)
+        host.onSessionEvent = { [weak model] event in
+            model?.handleAudioSession(event)
+        }
+        #endif
+        _model = StateObject(wrappedValue: model)
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .tint(model.theme.ui(.accordionHue))
                 .environment(\.foldStateProvider, currentProvider)
                 .environmentObject(model)
                 .modifier(HingeBridgeModifier(provider: foldStateProvider))

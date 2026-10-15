@@ -4,7 +4,17 @@ public protocol SynthRendering: Sendable {
     mutating func apply(_ params: VoiceParams)
     mutating func noteOn(frequencyHz: Double, velocity: Double)
     mutating func noteOff()
-    mutating func render(into buffer: inout [Float], sampleRate: Double)
+    /// Realtime entry point. Must not allocate or lock.
+    mutating func render(into buffer: UnsafeMutableBufferPointer<Float>, sampleRate: Double)
+}
+
+extension SynthRendering {
+    /// Convenience for tests and offline rendering.
+    public mutating func render(into buffer: inout [Float], sampleRate: Double) {
+        buffer.withUnsafeMutableBufferPointer { pointer in
+            render(into: pointer, sampleRate: sampleRate)
+        }
+    }
 }
 
 public protocol AudioEngineControlling: AnyObject, Sendable {
@@ -67,12 +77,19 @@ public struct SynthBank: Sendable {
     }
 
     public mutating func render(into buffer: inout [Float], sampleRate: Double) {
+        buffer.withUnsafeMutableBufferPointer { pointer in
+            render(into: pointer, sampleRate: sampleRate)
+        }
+    }
+
+    /// Realtime entry point used by the AVAudioEngine host. No allocations.
+    public mutating func render(into buffer: UnsafeMutableBufferPointer<Float>, sampleRate: Double) {
         switch kind {
-        case .placeholderSine: sine.render(into: &buffer, sampleRate: sampleRate)
-        case .reed: reed.render(into: &buffer, sampleRate: sampleRate)
-        case .karplusStrong: string.render(into: &buffer, sampleRate: sampleRate)
-        case .subtractive: filter.render(into: &buffer, sampleRate: sampleRate)
-        case .theremin: theremin.render(into: &buffer, sampleRate: sampleRate)
+        case .placeholderSine: sine.render(into: buffer, sampleRate: sampleRate)
+        case .reed: reed.render(into: buffer, sampleRate: sampleRate)
+        case .karplusStrong: string.render(into: buffer, sampleRate: sampleRate)
+        case .subtractive: filter.render(into: buffer, sampleRate: sampleRate)
+        case .theremin: theremin.render(into: buffer, sampleRate: sampleRate)
         }
         if releasing {
             for i in 0..<buffer.count {
@@ -85,10 +102,20 @@ public struct SynthBank: Sendable {
         }
     }
 
+    /// Main thread, before rendering. Reeds use every buffer as a root note;
+    /// the guitar uses the first buffer as its pluck excitation.
+    public mutating func loadSamples(_ samples: [SampleBuffer], for voice: SynthVoiceKind) {
+        switch voice {
+        case .reed: reed.sampler.load(samples)
+        case .karplusStrong: string.excitation = samples.first
+        case .placeholderSine, .subtractive, .theremin: break
+        }
+    }
+
     public mutating func noteOn(frequencyHz: Double, velocity: Double) {
         switch kind {
         case .karplusStrong:
-            string.pluck(frequencyHz: frequencyHz, velocity: velocity, sampleRate: string.ampSmoother.sampleRate)
+            string.pluck(frequencyHz: frequencyHz, velocity: velocity, sampleRate: string.sampleRate)
         default:
             let p = VoiceParams(amplitude: velocity, frequencyHz: frequencyHz)
             apply(p)
@@ -105,7 +132,7 @@ public struct SynthBank: Sendable {
 }
 
 /// Offline engine used by unit tests and as the Linux stand-in for AVAudioEngine.
-public final class OfflineAudioEngine: AudioEngineControlling, @unchecked Sendable {
+public final class OfflineAudioEngine: AudioEngineControlling, SampleLoading, @unchecked Sendable {
     public private(set) var isRunning = false
     public var sampleRate: Double
     public var bufferFrames: Int
@@ -156,6 +183,10 @@ public final class OfflineAudioEngine: AudioEngineControlling, @unchecked Sendab
 
     public func setRelease(_ enabled: Bool) {
         if enabled { bank.beginCloseRelease() }
+    }
+
+    public func loadSamples(_ samples: [SampleBuffer], for kind: SynthVoiceKind) {
+        bank.loadSamples(samples, for: kind)
     }
 
     @discardableResult

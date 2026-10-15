@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- HingeLab app icon. Hinge barrel = note head, standing panel = stem,
+       opened panel = flag, pleated bellows between them in the four
+       instrument hues. Render: node scripts/render-icon.mjs -->
+  <defs>
+    <radialGradient id="stage" cx="50%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#232736"/>
+      <stop offset="0.55" stop-color="#12141c"/>
+      <stop offset="1" stop-color="#0a0b10"/>
+    </radialGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f6efdc"/>
+      <stop offset="1" stop-color="#d9cdb0"/>
+    </linearGradient>
+    <radialGradient id="head" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#fbf5e6"/>
+      <stop offset="1" stop-color="#d6c9aa"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="38"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#stage)"/>
+  <g id="art" transform="translate(0 0)"></g>
+</svg>

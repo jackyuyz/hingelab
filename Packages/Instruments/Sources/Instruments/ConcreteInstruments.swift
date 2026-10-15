@@ -40,10 +40,15 @@ public final class InstrumentCore: @unchecked Sendable {
     public func noteOn(_ note: UInt8, velocity: UInt8) {
         heldNotes.insert(note)
         midiEvents.append(.noteOn(channel: settings.midiMapping.channel, note: note, velocity: velocity))
-        if id == .pitchBendGuitar || id == .accordion {
+        if id == .pitchBendGuitar || id == .accordion || id == .filterSweep {
             params.frequencyHz = ThereminMapping.midiToHz(Double(note), a4: settings.a4Hz)
             if id == .pitchBendGuitar {
                 params.amplitude = Double(velocity) / 127
+            }
+            if id == .filterSweep {
+                // Step pads retune the drone (latched); the drone sounds at
+                // once instead of waiting for the first hinge sample.
+                params.amplitude = max(params.amplitude, 0.4)
             }
         }
         if id == .accordion, params.amplitude == 0 {

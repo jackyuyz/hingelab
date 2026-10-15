@@ -1,56 +1,65 @@
 import SwiftUI
 import HingeL10n
 import Instruments
+import ThemeKit
 
+/// Left half: eight chord roots.
 struct GuitarChordGrid: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text(L10nKey.instrumentLeft.text(in: model.language)).font(.caption)
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+        let theme = model.theme
+        VStack(alignment: .leading, spacing: 10) {
+            SurfaceHeader(title: L10nKey.instrumentChords.text(in: model.language), trailing: nil, theme: theme)
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 ForEach(Array(GuitarLayout.defaultChords.enumerated()), id: \.offset) { index, note in
+                    let name = NoteName.name(midi: Int(note))
                     InstrumentKey(
-                        title: "Chord \(index + 1)",
+                        title: NoteName.letter(midi: Int(note)),
+                        subtitle: name,
+                        spokenLabel: name,
                         accessibilityID: "guitar.chord.\(index)",
-                        note: note
+                        note: note,
+                        face: .chord
                     )
                 }
             }
+            Spacer(minLength: 0)
+            WaveformSlot(amplitude: model.currentParams.amplitude, language: model.language, height: 40)
         }
-        .padding(8)
+        .padding(14)
+        .instrumentSurfaceTypeLimit()
     }
 }
 
+/// Right half: bend readout + gauge, then the fretboard strum pad.
 struct GuitarStrumPad: View {
     @EnvironmentObject private var model: AppModel
+    var nutLeading = true
 
     var body: some View {
-        VStack(spacing: 8) {
-            PlaceholderSlot(
-                title: L10nKey.slotFretboard.text(in: model.language),
-                systemImage: "guitars",
-                accessibilityID: "slot.fretboard"
-            )
-            AngleGaugeSlot(angle: model.foldState.angleDegrees, language: model.language)
-            Text(String(format: "%+.2f st", model.currentParams.pitchBendSemitones))
-                .font(.title3.monospacedDigit())
+        let theme = model.theme
+        let hue = theme.ui(.guitarHue)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
+                Readout(
+                    label: L10nKey.guitarBend.text(in: model.language),
+                    value: String(format: "%+.2f st", model.currentParams.pitchBendSemitones),
+                    tint: hue,
+                    theme: theme,
+                    size: 26
+                )
+                .padding(10)
+                .background(theme.ui(.surface), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .accessibilityElement(children: .combine)
                 .accessibilityIdentifier("guitar.bend")
-            ForEach(0..<GuitarLayout.stringCount, id: \.self) { string in
-                let note = GuitarLayout.defaultChords[min(string, GuitarLayout.defaultChords.count - 1)]
-                Rectangle()
-                    .fill(.secondary.opacity(0.4))
-                    .frame(height: 28)
-                    .overlay(Text("String \(string + 1)").font(.caption))
-                    .accessibilityIdentifier("guitar.string.\(string)")
-                    .accessibilityAddTraits(.allowsDirectInteraction)
-                    .gesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { _ in model.noteOn(note) }
-                            .onEnded { _ in model.noteOff(note) }
-                    )
+                AngleGaugeSlot(angle: model.foldState.angleDegrees, language: model.language, compact: true)
             }
+            SurfaceHeader(title: L10nKey.guitarStrings.text(in: model.language), trailing: nil, theme: theme)
+            FretboardStrumPad(nutLeading: nutLeading)
+                .frame(minHeight: 6 * 44)
         }
-        .padding(8)
+        .padding(14)
+        .instrumentSurfaceTypeLimit()
     }
 }

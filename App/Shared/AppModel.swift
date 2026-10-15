@@ -27,6 +27,12 @@ final class AppModel: ObservableObject {
     @Published var showLooper = false
     @Published var showCalibration = false
     @Published var creaseProvider: any CreaseRegionProviding = UnavailableCreaseRegionProvider()
+    /// Notes currently held on any key surface. Drives lit keys.
+    @Published private(set) var heldNotes: Set<UInt8> = []
+    /// Latest processed hinge/ribbon sample. Drives bellows, sparks, gauges.
+    @Published private(set) var lastSample: HingeSample?
+    /// When the accordion keys went down without bellows motion.
+    @Published private(set) var keysDownSince: Date?
 
     let store: any StoreServicing
     let engine: any AudioEngineControlling
@@ -68,6 +74,9 @@ final class AppModel: ObservableObject {
         self.instrument = InstrumentFactory.make(.accordion, settings: loaded)
         self.recorder = LoopRecorder(isPro: store.entitlements.hasFull)
         engine.setVoiceKind(InstrumentID.accordion.defaultVoice)
+        if let loader = engine as? SampleLoading {
+            BuiltinSampleLoader.load(into: loader, assets: audioAssets)
+        }
     }
 
     var entitlements: Entitlements { store.entitlements }
@@ -82,6 +91,8 @@ final class AppModel: ObservableObject {
             return
         }
         selectedInstrument = id
+        heldNotes.removeAll()
+        keysDownSince = nil
         instrument = InstrumentFactory.make(id, settings: settings)
         engine.setVoiceKind(id.defaultVoice)
         startEngineIfNeeded()
@@ -109,6 +120,8 @@ final class AppModel: ObservableObject {
         apply(sample)
         if state.posture == .closed {
             instrument.allNotesOff(release: true)
+            heldNotes.removeAll()
+            keysDownSince = nil
             engine.setRelease(true)
         }
     }
@@ -125,21 +138,61 @@ final class AppModel: ObservableObject {
 
     func noteOn(_ note: UInt8, velocity: UInt8 = 100) {
         startEngineIfNeeded()
+        if heldNotes.isEmpty, selectedInstrument == .accordion { keysDownSince = Date() }
+        heldNotes.insert(note)
         instrument.noteOn(note, velocity: velocity)
         if let hz = instrument.params.frequencyHz {
             engine.noteOn(frequencyHz: hz, velocity: Double(velocity) / 127)
         }
+        // The instrument decides loudness (accordion: bellows only, no sound
+        // from a key alone), so republish its params after the note event.
+        engine.setParameters(instrument.params.asVoice)
         flushMIDI()
         currentParams = instrument.params
     }
 
     func noteOff(_ note: UInt8) {
+        heldNotes.remove(note)
+        if heldNotes.isEmpty { keysDownSince = nil }
         instrument.noteOff(note)
         if instrument.params.amplitude == 0 {
             engine.noteOff()
         }
+        engine.setParameters(instrument.params.asVoice)
         flushMIDI()
         currentParams = instrument.params
+    }
+
+    /// Accordion keys held 3 s with no bellows motion (visual spec).
+    var showsBellowsHint: Bool {
+        guard selectedInstrument == .accordion, let since = keysDownSince else { return false }
+        return currentParams.amplitude == 0 && Date().timeIntervalSince(since) >= 3
+    }
+
+    func hue(for id: InstrumentID) -> ThemeColor {
+        theme.color(id.hueToken)
+    }
+
+    // MARK: Looper (the recorder is not observable; republish on change)
+
+    func beginLoopRecording() -> LoopError? {
+        objectWillChange.send()
+        return recorder.beginRecording()
+    }
+
+    func stopLoopRecording() {
+        objectWillChange.send()
+        _ = recorder.stopRecording()
+    }
+
+    func beginLoopOverdub() {
+        objectWillChange.send()
+        recorder.beginOverdub()
+    }
+
+    func exportLoop() throws -> Data {
+        objectWillChange.send()
+        return try recorder.exportWAV()
     }
 
     func setThereminVolume(_ value: Double) {
@@ -186,6 +239,9 @@ final class AppModel: ObservableObject {
         pipeline.calibration = settings.calibration
         persistSettings()
         instrument = InstrumentFactory.make(selectedInstrument, settings: settings)
+        #if canImport(AVFoundation)
+        (engine as? AVAudioEngineHost)?.setBufferFrames(settings.audioBuffer.frames)
+        #endif
     }
 
     func persistSettings() {
@@ -198,6 +254,7 @@ final class AppModel: ObservableObject {
     }
 
     private func apply(_ sample: HingeSample) {
+        lastSample = sample
         instrument.handle(sample)
         currentParams = instrument.params
         engine.setParameters(instrument.params.asVoice)
@@ -223,8 +280,8 @@ extension AppModel {
             store: MockStore(),
             engine: OfflineAudioEngine(),
             midi: NullMIDISender(),
-            theme: PlaceholderTheme(),
-            audioAssets: PlaceholderAudioAssets()
+            theme: DesignedTheme(),
+            audioAssets: BuiltinAudioAssets()
         )
     }
 }
