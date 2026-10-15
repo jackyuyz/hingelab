@@ -73,13 +73,14 @@ struct AccordionRightView: View {
                                 accessibilityID: "accordion.key.\(note)",
                                 note: note,
                                 face: name.contains("♯") ? .sharp : .natural,
-                                minHeight: 64
+                                minHeight: 64,
+                                maxHeight: 150
                             )
                         }
                     }
                 }
             }
-            Spacer(minLength: 0)
+            .frame(maxHeight: .infinity, alignment: .top)
         }
         .padding(14)
         .instrumentSurfaceTypeLimit()

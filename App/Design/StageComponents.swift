@@ -274,6 +274,8 @@ struct InstrumentKey: View {
     let note: UInt8
     var face: Face = .chord
     var minHeight: CGFloat = 60
+    /// Lets keys grow to fill a tall pane (nil = fixed at minHeight).
+    var maxHeight: CGFloat?
     @EnvironmentObject private var model: AppModel
     @State private var isPressed = false
 
@@ -294,7 +296,7 @@ struct InstrumentKey: View {
             }
         }
         .foregroundStyle(isPressed ? theme.ui(.onHue) : foreground(theme))
-        .frame(maxWidth: .infinity, minHeight: minHeight)
+        .frame(maxWidth: .infinity, minHeight: minHeight, maxHeight: maxHeight)
         .background {
             shape.fill(isPressed ? hue : fill(theme))
             shape.strokeBorder(isPressed ? hue : theme.ui(.hairline), lineWidth: 1)
