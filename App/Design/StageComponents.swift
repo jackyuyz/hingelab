@@ -376,7 +376,9 @@ struct SparkField: View {
                     guard age >= 0, age < life, Self.noise(id, 0) < rate / maxRate else { continue }
                     let t = age / life
                     let direction = Self.noise(id, 1) < 0.5 ? -1.0 : 1.0
-                    let x = size.width / 2 + CGFloat((Self.noise(id, 2) - 0.5) * 0.12 + direction * t * (0.18 + 0.22 * Self.noise(id, 3))) * size.width
+                    let origin = (Self.noise(id, 2) - 0.5) * 0.12
+                    let travel = direction * t * (0.18 + 0.22 * Self.noise(id, 3))
+                    let x = size.width / 2 + CGFloat(origin + travel) * size.width
                     let y = size.height * CGFloat(0.12 + 0.76 * Self.noise(id, 4)) - CGFloat(t * t) * size.height * 0.12
                     let radius = CGFloat(2 + 4 * (1 - t))
                     let rect = CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)

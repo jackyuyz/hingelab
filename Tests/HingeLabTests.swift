@@ -2,6 +2,7 @@ import XCTest
 import FoldKit
 import HingeInput
 import Instruments
+import MIDIOut
 import SettingsKit
 import Store
 import Synth
@@ -37,9 +38,20 @@ final class HingeLabTests: XCTestCase {
 
     @MainActor
     func testRibbonDrivesInstrumentLikeHinge() {
-        let model = AppModel.preview
+        let model = AppModel(
+            settingsStore: MemorySettingsStore(),
+            store: MockStore(entitlements: Entitlements(hasFull: true)),
+            engine: OfflineAudioEngine(),
+            midi: NullMIDISender(),
+            theme: DesignedTheme(),
+            audioAssets: BuiltinAudioAssets()
+        )
         model.select(.pitchBendGuitar)
-        model.ingestRibbon(1)
+        XCTAssertEqual(model.selectedInstrument, .pitchBendGuitar)
+        model.ingestRibbon(0.5)
+        XCTAssertEqual(model.currentParams.pitchBendSemitones, 0, accuracy: 0.001)
+        // Start at rest, then let the shared input smoother reach the endpoint.
+        for _ in 0..<40 { model.ingestRibbon(1) }
         XCTAssertEqual(model.currentParams.pitchBendSemitones, 2, accuracy: 0.001)
     }
 

@@ -73,7 +73,7 @@ cd Packages/HingeL10n && swift test
 ### App / UI tests (Xcode)
 
 ```bash
-xcodebuild test -scheme HingeLab -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+xcodebuild test -scheme HingeLab -destination 'platform=iOS Simulator,name=iPhone Duo'
 ```
 
 There is no official `simctl` hinge command. Use Device Hub (Closed / Open / Option-key slider) on the **iPhone Duo simulator**, or launch arguments:
@@ -88,6 +88,22 @@ There is no official `simctl` hinge command. Use Device Hub (Closed / Open / Opt
 ```
 
 Scheme `HingeLab-MockHinge` has these pre-ticked.
+
+## Integration status
+
+`main` combines `cursor/hingelab-foundation-4b51` (`b1dfff4`) with
+`claude/friendly-hamilton-hktvx6` (`b070495`). The Claude branch already
+contains the complete Cursor history, including the confirmed $4.99 price.
+The integration preserves both histories and the final accordion key layout.
+It also fixes Swift 6 compilation of the StoreKit scaffold and spark drawing,
+and gives the guitar ribbon test a Full entitlement and time for input smoothing.
+
+This is a foundation plus design/audio build. Production hinge events and
+reserved regions are still stubbed; the app uses `MockStore` and
+`NullMIDISender`; live looper capture, playback, and sharing still need wiring.
+The existing package tests cover these modules in isolation, not those missing
+device integrations. Real audio latency and realtime allocation/locking behavior
+still need hardware profiling.
 
 ## Architecture
 
@@ -129,7 +145,7 @@ Copied from the spec, plus foundation follow-ups:
 6. Measured xruns and hinge→audible latency on a Duo (the AVAudioEngine graph exists; not yet run on hardware). Looper capture still needs an output tap.
 7. Point size / scale of inner and outer panels (still `DuoDisplaySpec.Assumption` = nil).
 
-## Test results (Linux, Swift 6.2.4)
+## Test results (macOS, Swift 6.4; 2026-10-16)
 
 | Package | Tests | Status |
 |---------|-------|--------|
@@ -145,7 +161,11 @@ Copied from the spec, plus foundation follow-ups:
 | HingeL10n | 8 | Pass |
 | **Total** | **133** | **Pass** |
 
-App unit tests (`Tests/HingeLabTests.swift`) and UI tests need Xcode.
+App verification with Xcode 27.1 on a dedicated iPhone Duo simulator (iOS 27.1):
+**9 app unit tests and 5 UI tests passed**. UI tests use `-FoldMock` to check
+half-folded instrument slots, the closed pocket player, the no-hinge ribbon,
+launch, and Settings. These checks do not verify real hinge events or hardware
+latency.
 
 ## License
 

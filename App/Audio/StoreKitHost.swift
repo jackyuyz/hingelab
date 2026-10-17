@@ -6,7 +6,6 @@ import StoreKit
 
 /// StoreKit 2 production host. `MockStore` is used until this is wired in
 /// `HingeLabApp`. Unit tests stay on `MockStore` (Linux has no StoreKitTest).
-@MainActor
 final class StoreKitHost: StoreServicing {
     private let mock = MockStore()
 
